@@ -4,8 +4,11 @@ var Schema = mongoose.Schema;
 
 var CardInstanceSchema = new Schema(
   {
-    series_name: { type: String, required: true, maxlength: 45 },
-    series_release_date: { type: Date, required: true }
+    card: { type: Schema.Types.ObjectId, ref: 'Card', required: true },
+    condition: { type: String, required: true, maxlength: 45 },
+    sale_price: { type: Schema.Types.Decimal128, required: true },
+    grader: { type: String, required: true, enum: ['None', 'PSA', 'BGS'], default: 'None'},
+    grade: { type: Schema.Types.Decimal128 }
   }
 );
 

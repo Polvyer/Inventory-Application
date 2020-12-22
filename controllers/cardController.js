@@ -116,25 +116,33 @@ exports.card_create_post = function(req, res, next) {
   
       // Ensure card is not a duplicate
       const newKey = newCard.card_name.split(' ').join('').toLowerCase() + newCard.set_number.toString();
-      results.cards.forEach(card => {
+      const dupe = results.cards.some(card => {
         let existingKey = card.card_name.split(' ').join('').toLowerCase() + card.set_number.toString();
-        if (newKey === existingKey) {
-          // Card is a duplicate.
-          res.render('card_form', { title: 'Create Card', card: newCard, rarities: newCard.list_of_rarities, expansions: results.expansions, errors: ['Card is a duplicate'] });
-          return;
-        }
+        return newKey === existingKey;
       });
-  
-      // Card is not a duplicate. Save card.
-      newCard.save(function(err) {
-        if (err) { return next(err); }
-        // Successful - move card to images folder and redirect to new card record.
+
+      // Card is a duplicate
+      if (dupe) {
+        // Delete card in tmp folder.
         filename = req.body.card_name.split(' ').join('').toLowerCase() + req.body.set_number.toString() + '.jpg';
-        fs.rename(`./public/tmp/${filename}`, `./public/images/${filename}`, function(err) {
+        fs.unlink(`./public/tmp/${filename}`, (err) => {
           if (err) { return next(err); }
-          res.redirect(newCard.url);
-        })
-      }) 
+          // Successful - now render w/ errors
+          res.render('card_form', { title: 'Create Card', card: newCard, rarities: newCard.list_of_rarities, expansions: results.expansions, errors: ['Card is a duplicate', ] });
+        });
+      } else {
+        // Card is not a duplicate. Save card.
+        newCard.save(function(err) {
+          if (err) { return next(err); }
+          // Successful - move card to images folder and redirect to new card record.
+          filename = req.body.card_name.split(' ').join('').toLowerCase() + req.body.set_number.toString() + '.jpg';
+          fs.rename(`./public/tmp/${filename}`, `./public/images/${filename}`, function(err) {
+            if (err) { return next(err); }
+            res.redirect(newCard.url);
+          });
+        });
+      }
+      return;
     });
   })
 };
@@ -163,7 +171,31 @@ exports.card_delete_get = function(req, res) {
 
 // Handle card delete on POST.
 exports.card_delete_post = function(req, res) {
-  res.send('NOT IMPLEMENTED: Card delete POST');
+  async.parallel({
+    card_instances: function(callback) {
+      CardInstance.find({ card: req.body.cardid })
+        .exec(callback);
+    },
+    card: function(callback) {
+      Card.findById(req.body.cardid)
+        .populate('expansion')
+        .exec(callback);
+    }
+  }, function(err, results) {
+    if (err) { return next(err); }
+    if (results.card_instances.length > 0) {
+      // Card has copies. Render in the same way as for GET route.
+      res.render('card_delete', { title: 'Delete Card', card: results.card, card_instances: results.card_instances });
+      return;
+    } else {
+      // Card has no copies. Delete object and redirect to the list of cards.
+      Card.findByIdAndRemove(req.body.cardid, function deleteCard(err) {
+        if (err) { return next(err); }
+        // Success - go to card list
+        res.redirect('/catalog/card')
+      })
+    }
+  })
 };
 
 // Display card update form on GET.

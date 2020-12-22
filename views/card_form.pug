@@ -3,6 +3,11 @@ extends layout
 block content
   h1= title
 
+  if errors
+    ul
+      for error in errors
+        li!= error
+
   form(method='POST' action='' enctype="multipart/form-data")
     div.form-group
       label(for='card_name') Card Name:
@@ -23,15 +28,10 @@ block content
       select#rarity.form-control(type='select' placeholder='Expansion of card' name='expansion' required='true')
         for expansion in expansions
           if card
-            option(value=expansion._id selected=(card.expansion.expansion_name===expansion.expansion_name ? 'selected' : false) ) #{expansion.expansion_name}
+            option(value=expansion._id selected=(card.expansion.toString()===expansion._id.toString() ? 'selected' : false) ) #{expansion.expansion_name}
           else
             option(value=expansion._id) #{expansion.expansion_name}
     div.form-group
       label(for='set_number') Upload Card Image:
       input#card_img.form-control-file(type='file' placeholder='Upload image' name='card_img' required='true')
     button.btn.btn-primary(type='submit') Submit
-
-  if errors
-    ul
-      for error in errors
-        li!= error.msg

@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  h3 #{title} - #{card.set_number}/#{card.expansion.cards_in_set} - #{card.rarity}
+  h5 #{series_name}: #{card.expansion.expansion_name}
+  img(src=card.img_url alt=title width="220" height="300")
+
+  hr
+  p
+    a(href=card.url+'/delete') Delete card

@@ -1,0 +1,37 @@
+extends layout
+
+block content
+  h1= title
+
+  form(method='POST' action='' enctype="multipart/form-data")
+    div.form-group
+      label(for='card_name') Card Name:
+      input#card_name.form-control(type='text', placeholder='Name of card' name='card_name' required='true' value=(undefined===card ? '' : card.card_name) )
+    div.form-group
+      label(for='set_number') Set Number:
+      input#set_number.form-control(type='number', placeholder='Number of card' name='set_number' required='true' value=(undefined===card ? '' : card.set_number) )
+    div.form-group
+      label(for='rarity') Rarity:
+      select#rarity.form-control(type='select' placeholder='Rarity of card' name='rarity' required='true')
+        for rarity in rarities
+          if card
+            option(value=rarity selected=(rarity===card.rarity ? 'selected' : false) ) #{rarity}
+          else
+            option(value=rarity) #{rarity}
+    div.form-group
+      label(for='expansion') Expansion:
+      select#rarity.form-control(type='select' placeholder='Expansion of card' name='expansion' required='true')
+        for expansion in expansions
+          if card
+            option(value=expansion._id selected=(card.expansion.expansion_name===expansion.expansion_name ? 'selected' : false) ) #{expansion.expansion_name}
+          else
+            option(value=expansion._id) #{expansion.expansion_name}
+    div.form-group
+      label(for='set_number') Upload Card Image:
+      input#card_img.form-control-file(type='file' placeholder='Upload image' name='card_img' required='true')
+    button.btn.btn-primary(type='submit') Submit
+
+  if errors
+    ul
+      for error in errors
+        li!= error.msg

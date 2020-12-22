@@ -1,7 +1,5 @@
 #! /usr/bin/env node
 
-console.log('This script populates some test books, authors, genres and bookinstances to your database. Specified database as argument - e.g.: populatedb mongodb+srv://cooluser:coolpassword@cluster0.a9azn.mongodb.net/local_library?retryWrites=true');
-
 // Get arguments passed on command line
 var userArgs = process.argv.slice(2);
 /*
@@ -11,10 +9,10 @@ if (!userArgs[0].startsWith('mongodb')) {
 }
 */
 var async = require('async')
-var Book = require('./models/book')
-var Author = require('./models/author')
-var Genre = require('./models/genre')
-var BookInstance = require('./models/bookinstance')
+var Series = require('./models/series')
+var Expansion = require('./models/expansion')
+var Card = require('./models/card')
+var CardInstance = require('./models/cardinstance')
 
 
 var mongoose = require('mongoose');
@@ -24,203 +22,304 @@ mongoose.Promise = global.Promise;
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-var authors = []
-var genres = []
-var books = []
-var bookinstances = []
+var seriess = []
+var expansions = []
+var cards = []
+var cardinstances = []
 
-function authorCreate(first_name, family_name, d_birth, d_death, cb) {
-  authordetail = {first_name:first_name , family_name: family_name }
-  if (d_birth != false) authordetail.date_of_birth = d_birth
-  if (d_death != false) authordetail.date_of_death = d_death
+function seriesCreate(series_name, series_release_date, cb) {
+  seriesdetail = { 
+    series_name: series_name, 
+    series_release_date: series_release_date 
+  };
   
-  var author = new Author(authordetail);
+  var series = new Series(seriesdetail);
        
-  author.save(function (err) {
+  series.save(function (err) {
     if (err) {
       cb(err, null)
       return
     }
-    console.log('New Author: ' + author);
-    authors.push(author)
-    cb(null, author)
+    console.log('New Series: ' + series);
+    seriess.push(series)
+    cb(null, series)
   }  );
 }
 
-function genreCreate(name, cb) {
-  var genre = new Genre({ name: name });
+function expansionCreate(expansion_name, expansion_release_date, series, cards_in_set, cb) {
+  expansiondetail = { 
+    expansion_name: expansion_name, 
+    expansion_release_date: expansion_release_date, 
+    series: series, 
+    cards_in_set: cards_in_set 
+  };
+
+  var expansion = new Expansion(expansiondetail);
        
-  genre.save(function (err) {
+  expansion.save(function (err) {
     if (err) {
       cb(err, null);
       return;
     }
-    console.log('New Genre: ' + genre);
-    genres.push(genre)
-    cb(null, genre);
+    console.log('New Expansion: ' + expansion);
+    expansions.push(expansion)
+    cb(null, expansion);
   }   );
 }
 
-function bookCreate(title, summary, isbn, author, genre, cb) {
-  bookdetail = { 
-    title: title,
-    summary: summary,
-    author: author,
-    isbn: isbn
+function cardCreate(card_name, set_number, rarity, expansion, cb) {
+  carddetail = { 
+    card_name: card_name,
+    set_number: set_number,
+    expansion: expansion
   }
-  if (genre != false) bookdetail.genre = genre
+
+  if (rarity != false) carddetail.rarity = rarity
     
-  var book = new Book(bookdetail);    
-  book.save(function (err) {
+  var card = new Card(carddetail);    
+  card.save(function (err) {
     if (err) {
       cb(err, null)
       return
     }
-    console.log('New Book: ' + book);
-    books.push(book)
-    cb(null, book)
+    console.log('New Card: ' + card);
+    cards.push(card)
+    cb(null, card)
   }  );
 }
 
-
-function bookInstanceCreate(book, imprint, due_back, status, cb) {
-  bookinstancedetail = { 
-    book: book,
-    imprint: imprint
+function cardInstanceCreate(card, condition, sale_price, grader, grade, cb) {
+  cardinstancedetail = { 
+    card: card,
+    sale_price: sale_price
   }    
-  if (due_back != false) bookinstancedetail.due_back = due_back
-  if (status != false) bookinstancedetail.status = status
+  if (condition != false) cardinstancedetail.condition = condition
+  if (grader != false) {
+    cardinstancedetail.grader = grader
+    if (grade != false) cardinstancedetail.grade = grade
+  }
     
-  var bookinstance = new BookInstance(bookinstancedetail);    
-  bookinstance.save(function (err) {
+  var cardinstance = new CardInstance(cardinstancedetail);    
+  cardinstance.save(function (err) {
     if (err) {
-      console.log('ERROR CREATING BookInstance: ' + bookinstance);
+      console.log('ERROR CREATING CardInstance: ' + cardinstance);
       cb(err, null)
       return
     }
-    console.log('New BookInstance: ' + bookinstance);
-    bookinstances.push(bookinstance)
-    cb(null, book)
+    console.log('New CardInstance: ' + cardinstance);
+    cardinstances.push(cardinstance)
+    cb(null, card)
   }  );
 }
 
+function createSeries(cb) {
+  async.series([
+    function(callback) {
+      seriesCreate('Sword & Shield', '2020-02-07', callback);
+    },
+    function(callback) {
+      seriesCreate('Sun & Moon', '2017-02-03', callback);
+    },
+    function(callback) {
+      seriesCreate('XY', '2014-02-05', callback);
+    },
+    function(callback) {
+      seriesCreate('Black & White', '2011-04-25', callback);
+    },
+    function(callback) {
+      seriesCreate('HeartGold & SoulSilver', '2010-02-10', callback);
+    },
+    function(callback) {
+      seriesCreate('Platinum', '2009-02-11', callback);
+    },
+    function(callback) {
+      seriesCreate('Diamond & Pearl', '2007-05-01', callback);
+    },
+    function(callback) {
+      seriesCreate('EX', '2003-07-01', callback);
+    },
+    ],
+    // optional callback
+    cb);
+}
 
-function createGenreAuthors(cb) {
+function createExpansions(cb) {
     async.series([
         function(callback) {
-          authorCreate('Patrick', 'Rothfuss', '1973-06-06', false, callback);
+          expansionCreate('Shining Fates', '2021-02-19', seriess[0], 190, callback);
         },
         function(callback) {
-          authorCreate('Ben', 'Bova', '1932-11-8', false, callback);
+          expansionCreate('Vivid Voltage', '2020-11-13', seriess[0], 185, callback);
         },
         function(callback) {
-          authorCreate('Isaac', 'Asimov', '1920-01-02', '1992-04-06', callback);
+          expansionCreate("Champion's Path", '2020-09-25', seriess[0], 70, callback);
         },
         function(callback) {
-          authorCreate('Bob', 'Billings', false, false, callback);
+          expansionCreate("Darkness Ablaze", '2020-08-14', seriess[0], 185, callback);
         },
         function(callback) {
-          authorCreate('Jim', 'Jones', '1971-12-16', false, callback);
+          expansionCreate("Rebel Clash", '2020-05-01', seriess[0], 190, callback);
         },
         function(callback) {
-          genreCreate("Fantasy", callback);
+          expansionCreate("Sword & Shield", '2020-02-07', seriess[0], 200, callback);
         },
         function(callback) {
-          genreCreate("Science Fiction", callback);
+          expansionCreate("Cosmic Eclipse", '2019-11-01', seriess[1], 230, callback);
         },
         function(callback) {
-          genreCreate("French Poetry", callback);
+          expansionCreate("Hidden Fates", '2019-08-23', seriess[1], 150, callback);
+        },
+        function(callback) {
+          expansionCreate("Unified Minds", '2019-08-02', seriess[1], 230, callback);
+        },
+        function(callback) {
+          expansionCreate("Unbroken Bonds", '2019-05-03', seriess[1], 210, callback);
+        },
+        function(callback) {
+          expansionCreate("Detective Pikachu", '2019-03-29', seriess[1], 27, callback);
+        },
+        function(callback) {
+          expansionCreate("Team Up", '2019-02-01', seriess[1], 180, callback);
+        },
+        function(callback) {
+          expansionCreate("Dragon Majesty", '2018-09-07', seriess[1], 70, callback);
+        },
+        function(callback) {
+          expansionCreate("Ultra Prism", '2018-02-02', seriess[1], 150, callback);
+        },
+        function(callback) {
+          expansionCreate("Shining Legends", '2017-10-06', seriess[1], 70, callback);
+        },
+        function(callback) {
+          expansionCreate("Burning Shadows", '2017-08-04', seriess[1], 140, callback);
+        },
+        function(callback) {
+          expansionCreate("Generations", '2016-02-22', seriess[2], 110, callback);
+        },
+        function(callback) {
+          expansionCreate("Ancient Origins", '2015-08-12', seriess[2], 90, callback);
+        },
+        function(callback) {
+          expansionCreate("Flashfire", '2014-05-07', seriess[2], 100, callback);
+        },
+        function(callback) {
+          expansionCreate("Dragons Exalted", '2012-08-15', seriess[3], 120, callback);
+        },
+        function(callback) {
+          expansionCreate("Undaunted", '2010-08-18', seriess[4], 90, callback);
+        },
+        function(callback) {
+          expansionCreate("Arceus", '2009-11-04', seriess[5], 99, callback);
+        },
+        function(callback) {
+          expansionCreate("Legends Awakened", '2008-08-01', seriess[6], 146, callback);
+        },
+        function(callback) {
+          expansionCreate("Unseen Forces", '2005-08-01', seriess[7], 115, callback);
         },
         ],
         // optional callback
         cb);
 }
 
-
-function createBooks(cb) {
+function createCards(cb) {
     async.parallel([
         function(callback) {
-          bookCreate('The Name of the Wind (The Kingkiller Chronicle, #1)', 'I have stolen princesses back from sleeping barrow kings. I burned down the town of Trebon. I have spent the night with Felurian and left with both my sanity and my life. I was expelled from the University at a younger age than most people are allowed in. I tread paths by moonlight that others fear to speak of during day. I have talked to Gods, loved women, and written songs that make the minstrels weep.', '9781473211896', authors[0], [genres[0],], callback);
+          cardCreate('Pikachu VMAX', 188, 'Other', expansions[1], callback);
         },
         function(callback) {
-          bookCreate("The Wise Man's Fear (The Kingkiller Chronicle, #2)", 'Picking up the tale of Kvothe Kingkiller once again, we follow him into exile, into political intrigue, courtship, adventure, love and magic... and further along the path that has turned Kvothe, the mightiest magician of his age, a legend in his own time, into Kote, the unassuming pub landlord.', '9788401352836', authors[0], [genres[0],], callback);
+          cardCreate('Pikachu V', 170, 'Ultra Rare', expansions[1], callback);
         },
         function(callback) {
-          bookCreate("The Slow Regard of Silent Things (Kingkiller Chronicle)", 'Deep below the University, there is a dark place. Few people know of it: a broken web of ancient passageways and abandoned rooms. A young woman lives there, tucked among the sprawling tunnels of the Underthing, snug in the heart of this forgotten place.', '9780756411336', authors[0], [genres[0],], callback);
+          cardCreate('Jirachi', 119, 'Other', expansions[1], callback);
         },
         function(callback) {
-          bookCreate("Apes and Angels", "Humankind headed out to the stars not for conquest, nor exploration, nor even for curiosity. Humans went to the stars in a desperate crusade to save intelligent life wherever they found it. A wave of death is spreading through the Milky Way galaxy, an expanding sphere of lethal gamma ...", '9780765379528', authors[1], [genres[1],], callback);
+          cardCreate('Togekiss VMAX', 191, 'Other', expansions[1], callback);
         },
         function(callback) {
-          bookCreate("Death Wave","In Ben Bova's previous novel New Earth, Jordan Kell led the first human mission beyond the solar system. They discovered the ruins of an ancient alien civilization. But one alien AI survived, and it revealed to Jordan Kell that an explosion in the black hole at the heart of the Milky Way galaxy has created a wave of deadly radiation, expanding out from the core toward Earth. Unless the human race acts to save itself, all life on Earth will be wiped out...", '9780765379504', authors[1], [genres[1],], callback);
+          cardCreate('Charizard VMAX', 74, 'Other', expansions[2], callback);
         },
         function(callback) {
-          bookCreate('Test Book 1', 'Summary of test book 1', 'ISBN111111', authors[4], [genres[0],genres[1]], callback);
+          cardCreate('Charizard V', 79, 'Ultra Rare', expansions[2], callback);
         },
         function(callback) {
-          bookCreate('Test Book 2', 'Summary of test book 2', 'ISBN222222', authors[4], false, callback)
-        }
+          cardCreate('Charizard VMAX', 20, 'Ultra Rare', expansions[3], callback);
+        },
+        function(callback) {
+          cardCreate('Rillaboom', 197, 'Secret Rare', expansions[3], callback);
+        },
         ],
         // optional callback
         cb);
 }
 
-
-function createBookInstances(cb) {
+function createCardInstances(cb) {
     async.parallel([
         function(callback) {
-          bookInstanceCreate(books[0], 'London Gollancz, 2014.', false, 'Available', callback)
+          cardInstanceCreate(cards[0], false, 309.99, false, false, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[1], ' Gollancz, 2011.', false, 'Loaned', callback)
+          cardInstanceCreate(cards[1], false, 49.99, false, false, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[2], ' Gollancz, 2015.', false, false, callback)
+          cardInstanceCreate(cards[2], false, 26.99, false, false, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[3], 'New York Tom Doherty Associates, 2016.', false, 'Available', callback)
+          cardInstanceCreate(cards[2], false, 29.98, 'PSA', 7.5, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[3], 'New York Tom Doherty Associates, 2016.', false, 'Available', callback)
+          cardInstanceCreate(cards[3], false, 20.99, false, false, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[3], 'New York Tom Doherty Associates, 2016.', false, 'Available', callback)
+          cardInstanceCreate(cards[4], false, 449.99, false, false, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[4], 'New York, NY Tom Doherty Associates, LLC, 2015.', false, 'Available', callback)
+          cardInstanceCreate(cards[4], false, 463.98, 'PSA', 8.0, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[4], 'New York, NY Tom Doherty Associates, LLC, 2015.', false, 'Maintenance', callback)
+          cardInstanceCreate(cards[4], false, 469.99, 'BGS', 7.5, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[4], 'New York, NY Tom Doherty Associates, LLC, 2015.', false, 'Loaned', callback)
+          cardInstanceCreate(cards[5], false, 449.99, false, false, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[0], 'Imprint XXX2', false, false, callback)
+          cardInstanceCreate(cards[5], false, 489.99, 'PSA', 8.5, callback)
         },
         function(callback) {
-          bookInstanceCreate(books[1], 'Imprint XXX3', false, false, callback)
-        }
+          cardInstanceCreate(cards[6], false, 149.99, 'BGS', 9.5, callback)
+        },
+        function(callback) {
+          cardInstanceCreate(cards[6], false, 134.99, 'BGS', 8.0, callback)
+        },
+        function(callback) {
+          cardInstanceCreate(cards[6], false, 134.98, 'BGS', 7.5, callback)
+        },
+        function(callback) {
+          cardInstanceCreate(cards[6], false, 129.95, 'PSA', 8.5, callback)
+        },
+        function(callback) {
+          cardInstanceCreate(cards[6], false, 129.89, 'PSA', 7.5, callback)
+        },
+        function(callback) {
+          cardInstanceCreate(cards[6], false, 129.88, false, false, callback)
+        },
         ],
         // Optional callback
         cb);
 }
 
-
-
 async.series([
-    createGenreAuthors,
-    createBooks,
-    createBookInstances
+    createSeries,
+    createExpansions,
+    createCards,
+    createCardInstances
 ],
 // Optional callback
 function(err, results) {
     if (err) {
         console.log('FINAL ERR: '+err);
-    }
-    else {
-        console.log('BOOKInstances: '+bookinstances);
-        
+    } else {
+        console.log('CARDInstances: '+cardinstances);
     }
     // All done, disconnect from database
     mongoose.connection.close();

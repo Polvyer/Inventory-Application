@@ -1,0 +1,13 @@
+extends layout
+
+block content
+  h1= title
+
+  ul
+    - card_list.sort(function(a, b) {let textA = a.card_name.toUpperCase(); let textB = b.card_name.toUpperCase(); return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;});
+    each card in card_list
+      li
+        a(href=card.url) #{card.card_name} - #{card.set_number}/#{card.expansion.cards_in_set} - #{card.rarity}
+
+    else
+      li There are no cards.

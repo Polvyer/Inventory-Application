@@ -21,15 +21,15 @@ router.post('/card/create', card_controller.card_create_post);
 // GET request to delete Card.
 router.get('/card/:id/delete', card_controller.card_delete_get);
 
+// POST request to delete Card.
+router.post('/card/:id/delete', card_controller.card_delete_post);
+
 /*
-// POST request to delete Book.
-router.post('/book/:id/delete', book_controller.book_delete_post);
+// GET request to update Card.
+router.get('/card/:id/update', card_controller.card_update_get);
 
-// GET request to update Book.
-router.get('/book/:id/update', book_controller.book_update_get);
-
-// POST request to update Book.
-router.post('/book/:id/update', book_controller.book_update_post);
+// POST request to update Card.
+router.post('/card/:id/update', card_controller.card_update_post);
 */
 
 // GET request for one Card.

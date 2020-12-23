@@ -2,9 +2,7 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #[em LocalInventory], a very basic Express website developed by Polvyer.
-
-  h1 Dynamic content
+  p Welcome, this a very basic Express website developed by Polvyer.
 
   if error
     p Error getting dynamic content.
@@ -13,6 +11,6 @@ block content
 
     ul
       li #[strong Cards:] !{data.card_count}
-      li #[strong Copies:] !{data.card_instance_count}
       li #[strong Series:] !{data.series_count}
       li #[strong Expansions:] !{data.expansion_count}
+      li #[strong Copies:] !{data.card_instance_count}

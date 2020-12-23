@@ -3,3 +3,16 @@
   padding: 0;
   list-style: none;
 }
+
+.copy-container {
+  text-decoration: none;
+  color: black;
+}
+
+.copy-container:hover {
+  display: block;
+  background-color: ghostwhite;
+  cursor: pointer;
+  text-decoration: none;
+  color: black;
+}

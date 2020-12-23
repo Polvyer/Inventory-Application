@@ -34,7 +34,7 @@ exports.index = function(req, res, next) {
       Series.countDocuments({}, callback);
     }
   }, function(err, results) {
-    res.render('index', { title: 'Local Inventory Home', error: err, data: results });
+    res.render('index', { title: 'Pokemon Card Series & Sets Home', error: err, data: results });
   })
 };
 
@@ -53,11 +53,10 @@ exports.card_detail = function(req, res, next) {
   Card.findById(req.params.id)
     .populate('expansion')
     .exec(function(err, card) {
-      if (err) { return next(err) }
-      if (card === null) {
+      if (err || card === null) { 
         var err = new Error('Card not found');
         err.status = 404;
-        return next(err);
+        return next(err) 
       }
       Series.findById(card.expansion.series, 'series_name')
         .exec(function(err, series) {
@@ -71,7 +70,7 @@ exports.card_detail = function(req, res, next) {
 exports.card_create_get = function(req, res, next) {
   async.parallel({
     expansions: function(callback) {
-      Expansion.find({}, 'expansion_name')
+      Expansion.find()
         .exec(callback)
     },
     cards: function(callback) {
@@ -108,7 +107,7 @@ exports.card_create_post = function(req, res, next) {
         Card.find(callback)
       },
       expansions: function(callback) {
-        Expansion.find({}, 'expansion_name')
+        Expansion.find()
           .exec(callback)
       }
     }, function(err, results) {
@@ -188,12 +187,16 @@ exports.card_delete_post = function(req, res) {
       res.render('card_delete', { title: 'Delete Card', card: results.card, card_instances: results.card_instances });
       return;
     } else {
-      // Card has no copies. Delete object and redirect to the list of cards.
-      Card.findByIdAndRemove(req.body.cardid, function deleteCard(err) {
+      // Card has no copies. Delete card image in images folder.
+      filename = results.card.card_name.split(' ').join('').toLowerCase() + results.card.set_number.toString() + '.jpg';
+      fs.unlink(`./public/images/${filename}`, (err) => {
         if (err) { return next(err); }
-        // Success - go to card list
-        res.redirect('/catalog/card')
-      })
+        // Successful - now delete object and redirect to the list of cards.
+        Card.findByIdAndRemove(req.body.cardid, function deleteCard(err) {
+          if (err) { return next(err); }
+          res.redirect('/catalog/card')
+        })
+      });
     }
   })
 };

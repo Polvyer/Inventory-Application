@@ -5,11 +5,23 @@ block content
 
   if card_instances.length
 
-    p #[strong Delete the following copies before attempting to delete this card.]
+    img(src=card.img_url alt=title width="220" height="300").mb-3
 
-    div(style='margin-left:20px;margin-top:20px')
+    p #[strong Delete the following copies before attempting to delete this card.]
+    
+
+    div(style='margin-left:20px;margin-top:5px')
 
       h4 Copies
+
+      each card_instance in card_instances
+        a(href=card.url).copy-container
+          hr
+          p #[strong Condition:] #{card_instance.condition}
+          p #[strong Sale Price:] $#{card_instance.sale_price}
+          p #[strong Grader:] #{card_instance.grader}
+          if card_instance.grade
+            p #[strong Grade:] #{card_instance.grade}
 
   else
     p Do you really want to delete this Card?

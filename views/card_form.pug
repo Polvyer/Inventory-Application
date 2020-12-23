@@ -26,6 +26,7 @@ block content
     div.form-group
       label(for='expansion') Expansion:
       select#rarity.form-control(type='select' placeholder='Expansion of card' name='expansion' required='true')
+        - expansions.sort(function(a, b) {let textA = a.expansion_release_date; let textB = b.expansion_release_date; return (textA < textB) ? 1 : (textA > textB) ? -1 : 0;});
         for expansion in expansions
           if card
             option(value=expansion._id selected=(card.expansion.toString()===expansion._id.toString() ? 'selected' : false) ) #{expansion.expansion_name}

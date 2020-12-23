@@ -147,7 +147,7 @@ exports.card_create_post = function(req, res, next) {
 };
 
 // Display card delete form on GET.
-exports.card_delete_get = function(req, res) {
+exports.card_delete_get = function(req, res, next) {
   async.parallel({
     card_instances: function(callback) {
       CardInstance.find({ card: req.params.id })
@@ -202,11 +202,109 @@ exports.card_delete_post = function(req, res) {
 };
 
 // Display card update form on GET.
-exports.card_update_get = function(req, res) {
-  res.send('NOT IMPLEMENTED: Card update GET');
+exports.card_update_get = function(req, res, next) {
+  async.parallel({
+    card: function(callback) {
+      Card.findById(req.params.id)
+      .exec(callback)
+    },
+    expansions: function(callback) {
+      Expansion.find(callback)
+    }
+  }, function(err, results) {
+    if (err) { return next(err); }
+    if (results.card === null) { // No results
+      var err = new Error('Card not found');
+      err.status = 404;
+      return next(err);
+    }
+    // Success - so render.
+    res.render('card_form', { title: 'Update Card', rarities: results.card.list_of_rarities, card: results.card, expansions: results.expansions });
+  })
 };
 
 // Handle card update on POST.
-exports.card_update_post = function(req, res) {
-  res.send('NOT IMPLEMENTED: Card update POST');
+exports.card_update_post = function(req, res, next) {
+  upload(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading.
+      return next(err);
+    } else if (err) {
+      // An unknown error occurred when uploading.
+      return next(err);
+    }
+    // Successful - card has been uploaded to tmp folder.
+    var newCard = new Card(
+      {
+        _id: req.params.id, // This is required, or a new ID will be assigned!
+        card_name: req.body.card_name,
+        set_number: req.body.set_number,
+        rarity: req.body.rarity,
+        expansion: req.body.expansion,
+      }
+    );
+  
+    async.parallel({
+      // Card we're updating
+      card: function(callback) {
+        Card.findById(req.params.id)
+          .exec(callback)
+      },
+      // To check for duplicates
+      cards: function(callback) {
+        Card.find(callback)
+      },
+      // For form selection options (in case update fails)
+      expansions: function(callback) {
+        Expansion.find()
+          .exec(callback)
+      }
+    }, function(err, results) {
+      if (err) { return next(err); }
+  
+      // Ensure card is not a duplicate (exclude card being updated)
+      const newKey = newCard.card_name.split(' ').join('').toLowerCase() + newCard.set_number.toString();
+      const oldKey = results.card.card_name.split(' ').join('').toLowerCase() + results.card.set_number.toString();
+      const dupe = results.cards.some(card => {
+        let existingKey = card.card_name.split(' ').join('').toLowerCase() + card.set_number.toString();
+        if (oldKey === existingKey) {
+          return false;
+        }
+        return newKey === existingKey;
+      });
+
+      // Check if card is a duplicate
+      if (dupe) {
+        // Card is a duplicate - delete card in tmp folder.
+        let filename = req.body.card_name.split(' ').join('').toLowerCase() + req.body.set_number.toString() + '.jpg';
+        fs.unlink(`./public/tmp/${filename}`, (err) => {
+          if (err) { return next(err); }
+          // Successfully deleted - now render form again w/ errors
+          res.render('card_form', { title: 'Update Card', card: newCard, rarities: newCard.list_of_rarities, expansions: results.expansions, errors: ['Card is a duplicate', ] });
+        });
+      } 
+      else {
+        // Card is not a duplicate - update card.
+        Card.findByIdAndUpdate(req.params.id, newCard, {}, function(err, oldCard) {
+          console.log('Old card:', oldCard);
+          console.log('New card:', newCard);
+          if (err) { return next(err); }
+          // Successfully updated - now remove old image
+          let oldFilename = oldCard.card_name.split(' ').join('').toLowerCase() + oldCard.set_number.toString() + '.jpg';
+          console.log('Old Filename:', oldFilename)
+          fs.unlink(`./public/images/${oldFilename}`, (err) => {
+            if (err) { return next(err); }
+            // Successfully deleted - now move new card image to the correct folder (tmp -> images)
+            let newFilename = newCard.card_name.split(' ').join('').toLowerCase() + newCard.set_number.toString() + '.jpg';
+            console.log('New Filename:', newFilename)
+            fs.rename(`./public/tmp/${newFilename}`, `./public/images/${newFilename}`, function(err) {
+            if (err) { return next(err); }
+            res.redirect(oldCard.url);
+          });
+          });
+        });
+      }
+      return;
+    });
+  })
 };

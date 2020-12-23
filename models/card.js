@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
 
-var possibleRarities = ['Promo', 'Common', 'Uncommon', 'Rare', 'Reverse Holo', 'Rare Holo', 'Ultra Rare', 'Secret Rare', 'Other'];
+var possibleRarities = ['Promo', 'Common', 'Uncommon', 'Rare', 'Reverse Holo', 'Rare Holo', 'Ultra Rare', 'Secret Rare', 'Hyper Rare', 'Other'];
 
 var CardSchema = new Schema(
   {

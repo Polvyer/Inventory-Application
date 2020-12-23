@@ -6,7 +6,7 @@ block content
   if errors
     ul
       for error in errors
-        li!= error
+        li.text-danger!= error
 
   form(method='POST' action='' enctype="multipart/form-data")
     div.form-group
@@ -14,7 +14,7 @@ block content
       input#card_name.form-control(type='text', placeholder='Name of card' name='card_name' required='true' value=(undefined===card ? '' : card.card_name) )
     div.form-group
       label(for='set_number') Set Number:
-      input#set_number.form-control(type='number', placeholder='Number of card' name='set_number' required='true' value=(undefined===card ? '' : card.set_number) )
+      input#set_number.form-control(type='number', placeholder='Number of card' name='set_number' required='true' min="1" value=(undefined===card ? '' : card.set_number) )
     div.form-group
       label(for='rarity') Rarity:
       select#rarity.form-control(type='select' placeholder='Rarity of card' name='rarity' required='true')

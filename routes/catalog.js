@@ -24,13 +24,11 @@ router.get('/card/:id/delete', card_controller.card_delete_get);
 // POST request to delete Card.
 router.post('/card/:id/delete', card_controller.card_delete_post);
 
-/*
 // GET request to update Card.
 router.get('/card/:id/update', card_controller.card_update_get);
 
 // POST request to update Card.
 router.post('/card/:id/update', card_controller.card_update_post);
-*/
 
 // GET request for one Card.
 router.get('/card/:id', card_controller.card_detail);
